@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field
 from contract_risk_analyzer.schemas.outputs import ContractDiff
 from contract_risk_analyzer.utils.llm_client import call_llm
 from contract_risk_analyzer.utils.pdf_parser import extract_text_from_pdf
+from contract_risk_analyzer.utils.pdf_source import pdf_path_from_source
 
 
 class _SectionDiff(BaseModel):
@@ -28,9 +29,18 @@ _SYSTEM_PROMPT = (
 )
 
 
-def compare_contracts(file_path_a: str, file_path_b: str) -> ContractDiff:
-    a_sections = extract_text_from_pdf(file_path_a)
-    b_sections = extract_text_from_pdf(file_path_b)
+def compare_contracts(
+    file_path_a: str | None = None,
+    file_path_b: str | None = None,
+    pdf_url_a: str | None = None,
+    pdf_url_b: str | None = None,
+) -> ContractDiff:
+    with (
+        pdf_path_from_source(file_path=file_path_a, pdf_url=pdf_url_a) as resolved_path_a,
+        pdf_path_from_source(file_path=file_path_b, pdf_url=pdf_url_b) as resolved_path_b,
+    ):
+        a_sections = extract_text_from_pdf(resolved_path_a)
+        b_sections = extract_text_from_pdf(resolved_path_b)
 
     common_names = [name for name in a_sections.keys() if name in b_sections]
     diffs: list[_SectionDiff] = []
@@ -73,4 +83,3 @@ def compare_contracts(file_path_a: str, file_path_b: str) -> ContractDiff:
         materially_changed_clauses=changed,
         risk_delta=risk_delta,
     )
-

@@ -10,6 +10,7 @@ readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
   "fastmcp",
+  "httpx",
   "openai",
   "pymupdf",
   "pydantic",
@@ -28,4 +29,3 @@ package-dir = {"" = "src"}
 
 [tool.setuptools.packages.find]
 where = ["src"]
-

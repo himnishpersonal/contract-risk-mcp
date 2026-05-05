@@ -5,6 +5,7 @@ from typing import Iterable
 from contract_risk_analyzer.schemas.outputs import ClauseExtraction, ClauseExtractionList
 from contract_risk_analyzer.utils.llm_client import call_llm
 from contract_risk_analyzer.utils.pdf_parser import extract_text_from_pdf
+from contract_risk_analyzer.utils.pdf_source import pdf_path_from_source
 
 
 _SYSTEM_PROMPT = (
@@ -45,8 +46,13 @@ def _iter_relevant_sections(
             yield name, text
 
 
-async def extract_clauses(file_path: str, clause_type: str) -> list[ClauseExtraction]:
-    sections = extract_text_from_pdf(file_path)
+async def extract_clauses(
+    clause_type: str,
+    file_path: str | None = None,
+    pdf_url: str | None = None,
+) -> list[ClauseExtraction]:
+    with pdf_path_from_source(file_path=file_path, pdf_url=pdf_url) as resolved_path:
+        sections = extract_text_from_pdf(resolved_path)
     keywords = _keywords_for_clause_type(clause_type)
 
     results: list[ClauseExtraction] = []
@@ -65,4 +71,3 @@ async def extract_clauses(file_path: str, clause_type: str) -> list[ClauseExtrac
             results.append(item)
 
     return results
-

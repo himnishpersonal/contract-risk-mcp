@@ -78,23 +78,44 @@ async def health_check(request: Request) -> JSONResponse:
 
 
 @mcp.tool()
-async def extract_clauses_tool(file_path: str, clause_type: str):
-    return await extract_clauses(file_path=file_path, clause_type=clause_type)
+async def extract_clauses_tool(
+    clause_type: str,
+    file_path: str | None = None,
+    pdf_url: str | None = None,
+):
+    return await extract_clauses(
+        clause_type=clause_type,
+        file_path=file_path,
+        pdf_url=pdf_url,
+    )
 
 
 @mcp.tool()
-def flag_risk_terms_tool(file_path: str):
-    return flag_risk_terms(file_path=file_path)
+def flag_risk_terms_tool(file_path: str | None = None, pdf_url: str | None = None):
+    return flag_risk_terms(file_path=file_path, pdf_url=pdf_url)
 
 
 @mcp.tool()
-def summarize_obligations_tool(file_path: str):
-    return summarize_obligations(file_path=file_path)
+def summarize_obligations_tool(
+    file_path: str | None = None,
+    pdf_url: str | None = None,
+):
+    return summarize_obligations(file_path=file_path, pdf_url=pdf_url)
 
 
 @mcp.tool()
-def compare_contracts_tool(file_path_a: str, file_path_b: str):
-    return compare_contracts(file_path_a=file_path_a, file_path_b=file_path_b)
+def compare_contracts_tool(
+    file_path_a: str | None = None,
+    file_path_b: str | None = None,
+    pdf_url_a: str | None = None,
+    pdf_url_b: str | None = None,
+):
+    return compare_contracts(
+        file_path_a=file_path_a,
+        file_path_b=file_path_b,
+        pdf_url_a=pdf_url_a,
+        pdf_url_b=pdf_url_b,
+    )
 
 
 if __name__ == "__main__":
@@ -124,4 +145,3 @@ if __name__ == "__main__":
         middleware=[Middleware(RequestLoggingMiddleware)],
         uvicorn_config={"access_log": True},
     )
-

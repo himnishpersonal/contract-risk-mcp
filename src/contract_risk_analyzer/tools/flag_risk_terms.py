@@ -7,6 +7,7 @@ from concurrent.futures import ThreadPoolExecutor
 from contract_risk_analyzer.schemas.outputs import RiskTerm, RiskTermList
 from contract_risk_analyzer.utils.llm_client import call_llm
 from contract_risk_analyzer.utils.pdf_parser import extract_text_from_pdf
+from contract_risk_analyzer.utils.pdf_source import pdf_path_from_source
 
 
 _SEED_TERMS = [
@@ -58,8 +59,12 @@ def _call_for_term(term: str, m: re.Match, full_text: str) -> RiskTerm | None:
     return None
 
 
-def flag_risk_terms(file_path: str) -> list[RiskTerm]:
-    sections = extract_text_from_pdf(file_path)
+def flag_risk_terms(
+    file_path: str | None = None,
+    pdf_url: str | None = None,
+) -> list[RiskTerm]:
+    with pdf_path_from_source(file_path=file_path, pdf_url=pdf_url) as resolved_path:
+        sections = extract_text_from_pdf(resolved_path)
     full_text = "\n\n".join(sections.values())
     lower = full_text.lower()
 

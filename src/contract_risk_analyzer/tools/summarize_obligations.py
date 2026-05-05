@@ -6,6 +6,7 @@ from contract_risk_analyzer.schemas.outputs import ObligationSummary, Obligation
 from contract_risk_analyzer.utils.chunker import chunk_section
 from contract_risk_analyzer.utils.llm_client import call_llm
 from contract_risk_analyzer.utils.pdf_parser import extract_text_from_pdf
+from contract_risk_analyzer.utils.pdf_source import pdf_path_from_source
 
 
 _SYSTEM_PROMPT = (
@@ -24,8 +25,12 @@ def _dedupe_extend(target: list[str], items: list[str]) -> None:
         seen.add(s)
 
 
-def summarize_obligations(file_path: str) -> list[ObligationSummary]:
-    sections = extract_text_from_pdf(file_path)
+def summarize_obligations(
+    file_path: str | None = None,
+    pdf_url: str | None = None,
+) -> list[ObligationSummary]:
+    with pdf_path_from_source(file_path=file_path, pdf_url=pdf_url) as resolved_path:
+        sections = extract_text_from_pdf(resolved_path)
     full_text = "\n\n".join(sections.values())
     chunks = chunk_section(full_text, max_tokens=1500)
 
@@ -51,4 +56,3 @@ def summarize_obligations(file_path: str) -> list[ObligationSummary]:
 
     # Stable-ish ordering: parties with more obligations first.
     return sorted(by_party.values(), key=lambda x: len(x.obligations), reverse=True)
-

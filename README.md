@@ -2,6 +2,8 @@
 
 Contract Risk Analyzer is a FastMCP server + LangGraph workflow that ingests financial contract PDFs, extracts key clauses and obligations, flags known risk terms with severity, compares contract versions, and synthesizes everything into a structured risk brief for lawyers, risk teams, and operators who need fast, explainable contract triage.
 
+The MCP tools accept either a local `file_path` or a remote `pdf_url`. For hosted deployments such as Railway, use `pdf_url` so the server can download the PDF into temporary storage before analysis.
+
 ## Architecture (high level)
 
 ```
@@ -100,13 +102,42 @@ Claude Desktop config:
 
 ## Example tool calls
 
+### Input source rules
+
+For single-contract tools, provide exactly one of:
+
+```json
+{
+  "file_path": "/app/samples/contract.pdf"
+}
+```
+
+or:
+
+```json
+{
+  "pdf_url": "https://example.com/contracts/contract.pdf"
+}
+```
+
+For `compare_contracts`, provide exactly one source for each side:
+
+```json
+{
+  "pdf_url_a": "https://example.com/contracts/v1.pdf",
+  "pdf_url_b": "https://example.com/contracts/v2.pdf"
+}
+```
+
+Remote PDFs are downloaded to temporary storage, capped at 50 MB per PDF, and deleted after each tool call.
+
 ### `extract_clauses`
 
 Input:
 
 ```json
 {
-  "file_path": "/path/to/contract.pdf",
+  "pdf_url": "https://example.com/contracts/isda.pdf",
   "clause_type": "termination events"
 }
 ```
@@ -130,7 +161,7 @@ Sample output:
 Input:
 
 ```json
-{ "file_path": "/path/to/contract.pdf" }
+{ "pdf_url": "https://example.com/contracts/isda.pdf" }
 ```
 
 Sample output:
@@ -152,7 +183,7 @@ Sample output:
 Input:
 
 ```json
-{ "file_path": "/path/to/contract.pdf" }
+{ "pdf_url": "https://example.com/contracts/isda.pdf" }
 ```
 
 Sample output:
@@ -174,8 +205,8 @@ Input:
 
 ```json
 {
-  "file_path_a": "/path/to/v1.pdf",
-  "file_path_b": "/path/to/v2.pdf"
+  "pdf_url_a": "https://example.com/contracts/v1.pdf",
+  "pdf_url_b": "https://example.com/contracts/v2.pdf"
 }
 ```
 

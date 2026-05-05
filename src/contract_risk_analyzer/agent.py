@@ -22,7 +22,8 @@ def _merge_lists(left: list, right: list) -> list:
 
 
 class RiskState(TypedDict, total=False):
-    file_path: str
+    file_path: str | None
+    pdf_url: str | None
     contract_name: str
     clauses: Annotated[list[ClauseExtraction], _merge_lists]
     risk_terms: list[RiskTerm]
@@ -36,26 +37,48 @@ def _contract_name_from_path(path: str) -> str:
 
 
 async def _termination_node(state: RiskState) -> RiskState:
-    clauses = await extract_clauses(state["file_path"], "termination events")
+    clauses = await extract_clauses(
+        clause_type="termination events",
+        file_path=state.get("file_path"),
+        pdf_url=state.get("pdf_url"),
+    )
     return {"clauses": clauses}
 
 
 async def _default_node(state: RiskState) -> RiskState:
-    clauses = await extract_clauses(state["file_path"], "event of default")
+    clauses = await extract_clauses(
+        clause_type="event of default",
+        file_path=state.get("file_path"),
+        pdf_url=state.get("pdf_url"),
+    )
     return {"clauses": clauses}
 
 
 async def _collateral_node(state: RiskState) -> RiskState:
-    clauses = await extract_clauses(state["file_path"], "collateral")
+    clauses = await extract_clauses(
+        clause_type="collateral",
+        file_path=state.get("file_path"),
+        pdf_url=state.get("pdf_url"),
+    )
     return {"clauses": clauses}
 
 
 def _flag_node(state: RiskState) -> RiskState:
-    return {"risk_terms": flag_risk_terms(state["file_path"])}
+    return {
+        "risk_terms": flag_risk_terms(
+            file_path=state.get("file_path"),
+            pdf_url=state.get("pdf_url"),
+        )
+    }
 
 
 def _obligations_node(state: RiskState) -> RiskState:
-    return {"obligations": summarize_obligations(state["file_path"])}
+    return {
+        "obligations": summarize_obligations(
+            file_path=state.get("file_path"),
+            pdf_url=state.get("pdf_url"),
+        )
+    }
 
 
 def _synthesize_node(state: RiskState) -> RiskState:
@@ -106,12 +129,18 @@ def _build_graph() -> StateGraph:
 _APP = _build_graph().compile()
 
 
-async def analyze_contract(file_path: str) -> RiskBrief:
+async def analyze_contract(
+    file_path: str | None = None,
+    pdf_url: str | None = None,
+) -> RiskBrief:
+    if bool(file_path) == bool(pdf_url):
+        raise ValueError("Provide exactly one of file_path or pdf_url.")
+
     state: RiskState = {
         "file_path": file_path,
-        "contract_name": _contract_name_from_path(file_path),
+        "pdf_url": pdf_url,
+        "contract_name": _contract_name_from_path(file_path or pdf_url or "Contract"),
         "clauses": [],
     }
     out = await _APP.ainvoke(state)
     return out["brief"]
-
